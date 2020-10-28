@@ -7,14 +7,22 @@ const knexfile = require('../knexfile');
 app.db = knex(knexfile.test);
 
 consign({ cwd: 'src', verbose: false })
-  .include('./config/middlewares.js')
-  .include('./services')
-  .include('./routes')
-  .include('./config/routes.js')
+  .include('./config/passport.js')
+  .then('./config/middlewares.js')
+  .then('./services')
+  .then('./routes')
+  .then('./config/routes.js')
   .into(app);
 
 app.get('/', (req, res) => {
   res.status(200).send();
+});
+
+app.use((err, res, resp, next) => {
+  const { name, message, stack } = err;
+  if (name === 'ValidationError') resp.status(400).json({ error: message });
+  else resp.status(500).send({ name, message, stack });
+  next(err);
 });
 
 // app.db.on('query', (query) => {
